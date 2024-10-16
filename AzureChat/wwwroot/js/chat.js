@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!user) {
         alert("User is not logged in. Redirecting to login page.");
-        window.location.href = "localhost:7062/";
+        window.location.href = "testapiit.azurewebsites.net";
         return;
     }
 
