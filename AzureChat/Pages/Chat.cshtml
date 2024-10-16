@@ -1,0 +1,23 @@
+﻿@page
+@model AzureChat.Pages.Index1Model
+@{
+}
+<script src="~/js/signarl/dist/browser/signalr.js"></script>
+<script src="~/js/chat.js"></script>
+
+<div id="chatSection" style="display:block;">
+    <h4 id="nickname"></h4>
+    <button id="generalChatButton" class="btn btn-secondary">General Chat</button>
+    <div id="chatWindow" class="border p-2" style="height: 400px; overflow-y: auto;">
+        <ul id="messagesList" class="list-unstyled">
+        </ul>
+    </div>
+    <div class="mt-2">
+        <input type="text" id="messageInput" class="form-control" placeholder="Type a message" />
+        <button id="sendButton" class="btn btn-primary mt-2">Send Message</button>
+    </div>
+
+    <h4>Active Chats</h4>
+    <ul id="usersList" class="list-group">
+    </ul>
+</div>

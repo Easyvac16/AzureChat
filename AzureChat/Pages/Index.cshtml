@@ -1,0 +1,18 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+<script src="~/js/signarl/dist/browser/signalr.js"></script>
+<script src="~/js/main.js"></script>
+
+<div class="container">
+    <div id="userSection">
+        <input type="text" id="userNickname" placeholder="Enter your nickname" />
+        <input type="text" id="userPassword" placeholder="Enter your password" />
+        <button id="loginButton">Login</button>
+        <button id="registerButton">Register</button>
+    </div>
+</div>
+
+
