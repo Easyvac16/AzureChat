@@ -16,36 +16,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
     connection.start().then(function () {
         console.log("Connected to SignalR as user:", user);
-        connection.on("ReceiveMessage", function (user, message) {
-            var li = document.createElement("li");
-            console.log(user)
-            li.textContent = `${user}: ${message}`;
+        connection.invoke("GetUserList").catch(function (err) {
+            console.error("Error invoking GetUserList: ", err.toString());
+        });
+
+        connection.on("ReceiveMessage", function (senderNickname, message) {
             var messagesList = document.getElementById("messagesList");
-            if (messagesList) {
-                messagesList.appendChild(li);
-            } else {
-                console.error("messagesList element not found!");
-            }
+
+            var li = document.createElement("li");
+            li.textContent = `${senderNickname}: ${message}`;
+
+            messagesList.appendChild(li);
+        });
+
+
+        connection.on("ReceivePublicMessage", function (senderNickname, message) {
+            var publicMessagesList = document.getElementById("publicMessagesList");
+
+            var li = document.createElement("li");
+            li.textContent = `${senderNickname}: ${message}`;
+
+            publicMessagesList.appendChild(li);
         });
 
 
 
-        connection.on("ReceivePrivateMessage", function (sender, message) {
-            console.log("ReceivePrivateMessage called");
-            console.log("Sender:", sender, "Message:", message);
-            var li = document.createElement("li");
-            li.textContent = `Private from ${sender}: ${message}`;
+        connection.on("ReceivePrivateMessage", function (senderNickname, message) {
             var messagesList = document.getElementById("messagesList");
-            if (messagesList) {
-                messagesList.appendChild(li);
-            } else {
-                console.error("messagesList element not found!");
-            }
+
+            var li = document.createElement("li");
+            li.textContent = `${senderNickname}: ${message}`;
+
+            messagesList.appendChild(li);
         });
 
-        
-
-        
 
     }).catch(function (err) {
         console.error("Error connecting to SignalR: ", err.toString());
@@ -67,27 +71,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
     connection.on("ReceiveUserList", function (users) {
         var usersList = document.getElementById("usersList");
-        usersList.innerHTML = ""; 
+        usersList.innerHTML = "";
 
         users.forEach(function (userObj) {
-            debugger
             var li = document.createElement("li");
             li.className = "list-group-item list-group-item-action";
-            li.innerHTML = `${userObj.user.key}`; 
+
+            li.textContent = `${userObj.user.key}`;
 
             li.addEventListener("click", function () {
-                selectedUser = userObj.user;
+                selectedUser = userObj.user.key;
                 console.log(`Opening private chat with ${selectedUser}`);
-                document.getElementById("chatWindow").innerHTML = `<h5>Private chat with ${selectedUser}</h5> 
-                    <ul id="messagesList" class="list-unstyled">
-                        </ul>`;
+
+                document.getElementById("chatWindow").innerHTML = `<h5>Private chat with ${selectedUser}</h5>
+                <ul id="messagesList" class="list-unstyled"></ul>`;
+
+                connection.invoke("OpenPrivateChat", selectedUser).catch(function (err) {
+                    return console.error(err.toString());
+                });
             });
 
             usersList.appendChild(li);
         });
     });
 
-
+    document.getElementById("generalChatButton").addEventListener("click", function () {
+        connection.invoke("OpenGlobalChat").catch(function (err) {
+            return console.error(err.toString());
+        });
+    });
 
 
     document.getElementById("sendButton").addEventListener("click", function (event) {
@@ -133,26 +145,5 @@ document.addEventListener("DOMContentLoaded", function () {
                         </ul>`;
     });
 
-    connection.on("ReceiveUserList", function (users) {
-        var usersList = document.getElementById("usersList");
-        usersList.innerHTML = "";
-        console.log(users);
-
-        users.forEach(function (userObj) {
-            var li = document.createElement("li");
-            li.className = "list-group-item list-group-item-action";
-            li.textContent = `${userObj.user}`;
-
-            li.addEventListener("click", function () {
-                selectedUser = userObj.user;
-                console.log(`Opening private chat with ${selectedUser}`);
-                document.getElementById("chatWindow").innerHTML = `<h5>Private chat with ${selectedUser}</h5> 
-                <ul id="messagesList" class="list-unstyled">
-                    </ul>`;
-            });
-
-            usersList.appendChild(li);
-        });
-    });
 });
 

@@ -30,10 +30,14 @@ namespace SignalRChat.Hubs
             if (!string.IsNullOrEmpty(username))
             {
                 _connections[username] = Context.ConnectionId;
+                _users[Context.ConnectionId] = username; 
             }
+
             await Clients.All.SendAsync("ReceiveUserList", _connections.Select(u => new { user = u }).ToList());
+            await OpenGlobalChat();
             await base.OnConnectedAsync();
         }
+
 
 
         public async Task RegisterUser(string username, string password)
@@ -67,16 +71,16 @@ namespace SignalRChat.Hubs
 
             if (existingUser != null)
             {
-                
                 await Clients.Caller.SendAsync("LoginSuccessful", existingUser.Id);
-
                 if (!_users.ContainsKey(Context.ConnectionId))
                 {
-                    _users[Context.ConnectionId] = username; 
+                    _users[Context.ConnectionId] = username;
+                    _connections[username] = Context.ConnectionId; 
                     await Clients.All.SendAsync("UserConnected", username, existingUser.Id);
                     await GetUserList();
                 }
             }
+
             else
             {
                 
@@ -148,25 +152,53 @@ namespace SignalRChat.Hubs
 
         public async Task OpenPrivateChat(string receiverUsername)
         {
-            var receiver = await _context.Users.FirstOrDefaultAsync(u => u.Username == receiverUsername);
+            var receiver = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == receiverUsername);
 
-            if (receiver != null)
+            if (!_users.TryGetValue(Context.ConnectionId, out var senderUsername))
             {
-                var connectionId = Context.ConnectionId;
+                await Clients.Caller.SendAsync("Error", "User not found in session.");
+                return;
+            }
 
-                var pendingMessages = await _context.ChatMessages
-                    .Where(m => (m.SenderId == receiver.Id && m.ReceiverId == connectionId)
-                             || (m.SenderId == connectionId && m.ReceiverId == receiver.Id))
-                    .OrderBy(m => m.Timestamp)
+            var sender = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == senderUsername);
+
+            if (receiver != null && sender != null)
+            {
+                var messageHistory = await _context.ChatMessages
+                    .Where(m => (m.SenderId == sender.Id && m.ReceiverId == receiver.Id)
+                              || (m.SenderId == receiver.Id && m.ReceiverId == sender.Id))
+                    .OrderBy(m => m.Timestamp) 
                     .ToListAsync();
 
-                foreach (var message in pendingMessages)
+                foreach (var message in messageHistory)
                 {
-                    var sender = await _context.Users.FirstOrDefaultAsync(u => u.Id == message.SenderId);
-                    await Clients.Caller.SendAsync("ReceivePrivateMessage", sender.Username, message.Message);
+                    var senderUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Id == message.SenderId);
+                    await Clients.Caller.SendAsync("ReceivePrivateMessage", senderUser.Username, message.Message);
                 }
             }
+            else
+            {
+                await Clients.Caller.SendAsync("Error", "User not found.");
+            }
         }
+
+        public async Task GetGlobalChatHistory()
+        {
+            var globalMessages = await _context.ChatMessages
+                .Where(m => m.ReceiverId == null) 
+                .OrderBy(m => m.Timestamp)
+                .ToListAsync();
+
+            foreach (var message in globalMessages)
+            {
+                var senderUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == message.SenderId);
+                await Clients.Caller.SendAsync("ReceiveMessage", senderUser.Username, message.Message);
+            }
+        }
+
 
         public async Task SendMessage(string senderNickname, string message)
         {
@@ -208,13 +240,19 @@ namespace SignalRChat.Hubs
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var username = Context.User?.Identity?.Name;
-            if (username != null)
+            if (_users.TryGetValue(Context.ConnectionId, out var username))
             {
                 _connections.Remove(username);
+                _users.Remove(Context.ConnectionId); 
             }
+
             await Clients.All.SendAsync("ReceiveUserList", _connections.Select(u => new { user = u }).ToList());
             await base.OnDisconnectedAsync(exception);
+        }
+
+        public async Task OpenGlobalChat()
+        {
+            await GetGlobalChatHistory();
         }
 
         public async Task GetUserList()
