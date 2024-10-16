@@ -4,6 +4,14 @@
       "type": "mssql",
       "connectionId": "ConnectionStrings:ChatDatabase",
       "dynamicId": null
+    },
+    "secrets1": {
+      "type": "secrets"
+    },
+    "signalr1": {
+      "type": "signalr",
+      "connectionId": "Azure:SignalR:ConnectionString",
+      "dynamicId": null
     }
   }
 }
