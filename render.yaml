@@ -12,5 +12,5 @@ services:
 
 databases:
   - name: postgres
-    type: postgressql
+    type: postgresql
     plan: free
