@@ -11,6 +11,6 @@ services:
     healthCheckPath: "/"
 
 databases:
-  - name: azure-chat-database
-    type: mysql
+  - name: postgres
+    type: postgressql
     plan: free
