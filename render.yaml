@@ -1,0 +1,16 @@
+services:
+  - name: azure-chat-web-app
+    type: web
+    env: docker
+    buildCommand: "docker build -t azure-chat ."
+    startCommand: "docker run -d -p 8080:80 azure-chat"
+    envVars:
+      - key: DATABASE_URL
+        value: "postgresql://postgres.cdiyhhthpkbojagsytcn:[D000000089d]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+    plan: free
+    healthCheckPath: "/"
+
+databases:
+  - name: azure-chat-database
+    type: mysql
+    plan: free
