@@ -8,8 +8,15 @@ builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 builder.Logging.AddConsole();
 
+/*builder.Services.AddDbContext<ChatContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("FreeSQL")));*/
+
 builder.Services.AddDbContext<ChatContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ChatDatabase")));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("FreeSQL"),
+        new MySqlServerVersion(new Version(5, 5, 62)) // Версія вашого MySQL сервера
+    )
+);
 
 builder.Services.AddControllersWithViews();
 
